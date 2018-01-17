@@ -1,0 +1,16 @@
+Package: ezplot
+Version: 0.0.0.9000
+Title: Syntax simplification for ggplot2
+Description: Takes data frames and creates common plots using sensible defaults and greatly simplified syntax. For those who don't have the time to learn the nuances of ggplot2.
+Authors@R: person("Aaron", "Cooley", , "aaronsama@gmail.com", c("aut", "cre"))
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+ByteCompile: true
+Depends: 
+    ggplot2
+Imports: 
+    dplyr,
+    wrapr,
+    checkmate
+RoxygenNote: 6.0.1
