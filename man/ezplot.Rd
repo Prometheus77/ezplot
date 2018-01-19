@@ -4,11 +4,15 @@
 \alias{ezplot}
 \title{Easy plotting of ggplot2 objects}
 \usage{
-ezplot(data, plot_type = "bar", x, y, group = NULL,
+ezplot(data, aggr = NULL, plot_type = "bar", x, y, group = NULL,
   group_method = "stack", facet = NULL, palette = NULL)
 }
 \arguments{
-\item{data}{(\code{data.frame} or \code{tibble}) Data to be used in plot}
+\item{data}{(\code{data.frame} | \code{tibble}) Data to be used in plot}
+
+\item{aggr}{(\code{function}) (Optional) function created using
+\code{dplyr::summarise}. Must take the form \code{function(x) summarise(x,
+...)}}
 
 \item{plot_type}{\code{character(1)} Type of plot to create. Default is \code{'bar'}
 \itemize{
