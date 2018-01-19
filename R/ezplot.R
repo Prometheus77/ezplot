@@ -24,9 +24,8 @@
 #'   \item \code{'fill'} places groups on top of one another and normalizes to
 #'   the same height. Useful for comparing proportions
 #' }
-#' @param fill (Optional) Variable to fill by
-#' @param color (Optional) Variable to color by
 #' @param facet (Optional) Variable to facet by
+#' @param palette (Optional) Color palette to use for fill
 #' 
 #' @export
 ezplot <- function(data, aggr = NULL, plot_type = "bar", x, y, group = NULL, group_method = "stack", 
@@ -90,6 +89,16 @@ ezplot <- function(data, aggr = NULL, plot_type = "bar", x, y, group = NULL, gro
   } else {
     stop("plot_type ", plot_type, " not supported!")
   }
+  
+  if (hasArg("palette")) {
+    if (length(palette) == 1) {
+      gg <- gg + scale_fill_brewer(palette)
+    } else {
+      gg <- gg + scale_fill_manual(values = palette)
+    }
+  }
+  
+  gg <- gg + theme(axis.text.x = element_text(angle = 90, hjust = 1))
   
   gg
 }
