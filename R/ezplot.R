@@ -7,49 +7,115 @@
 #' @param aggr (\code{function}) (Optional) function created using
 #'   \code{dplyr::summarise}. Must take the form \code{function(x) summarise(x,
 #'   ...)}
-#' @param plot_type \code{character(1)} Type of plot to create. Default is \code{'bar'}
+#' @param plot_type \code{character(1)} Type of plot to create. Default is \code{'col'}
 #' \itemize{
-#'   \item \code{'bar'} Create bar plot using \code{geom_bar()}
+#'   \item \code{'col'} Create column plot using \code{geom_col()}
 #'   \item \code{'line'} Create line plot using \code{geom_line()}
+#'   \item \code{'smooth'} Create smoothed line plot using \code{geom_smooth()}
 #'   \item \code{'point'} Create point plot (scatterplot) using \code{geom_point()}
 #'   \item \code{'area'} Create area plot using \code{geom_area()}
+#'   \item \code{'density'} Create density plot using \code{geom_density()}
+#'   \item \code{'dotplot'} Create dot plot using \code{geom_dotplot()}
+#'   \item \code{'freqpoly'} Create frequency polygon using \code{geom_freqpoly()}
+#'   \item \code{'histogram'} Create histogram using \code{geom_histogram()}
 #' }
-#' @param x Variable to use on X-axis. Will be coerced to a factor
+#' @param x Variable to use on X-axis
 #' @param y Variable to use on Y-axis
 #' @param group (Optional) Variable to group by
-#' @param group_method \code{character(1)} How to display grouping. Default is \code{'stack'}
+#' @param position \code{character(1)} How to position grouping. Default is \code{'identity'}
 #' \itemize{
-#'   \item \code{'stack'} places groups on top of one another, i.e. stacked bar chart
+#'   \item \code{'stack'} stacks groups on top of one another, i.e. stacked bar chart
 #'   \item \code{'dodge'} places groups side-by-side, i.e. clustered bar chart or butted bar chart
-#'   \item \code{'fill'} places groups on top of one another and normalizes to
+#'   \item \code{'fill'} stacks groups on top of one another and normalizes to
 #'   the same height. Useful for comparing proportions
+#'   \item \code{'identity'} places groups in the same location
 #' }
 #' @param facet (Optional) Variable to facet by
 #' @param palette (Optional) Color palette to use for fill
+#' @param ... (Optional) Additional parameters to pass to the geom function
 #' 
 #' @export
-ezplot <- function(data, aggr = NULL, plot_type = "bar", x, y, group = NULL, group_method = "stack", 
-                   facet = NULL, palette = NULL) {
-  checkmate::assert_subset(plot_type, c("bar", "line", "point", "area"))
+ezplot <- function(data, aggr = NULL, plot_type = "col", x, y = NULL, group = NULL, 
+                   position = "identity", facet = NULL, palette = NULL, ci = NULL, 
+                   title = NULL, subtitle = NULL, caption = NULL, ...) {
+
+  checkmate::assert_subset(plot_type, c("col", "line", "point", "smooth", "area", "density", "dotplot",
+                                        "freqpoly", "histogram", "bar"))
   checkmate::assert_function(aggr, null.ok = TRUE)
   checkmate::assert_subset(x, names(data), empty.ok = FALSE)
+  # can't check y without knowing aggregation values
   checkmate::assert_subset(group, names(data))
-  checkmate::assert_subset(group_method, c("stack", "dodge", "fill"))
+  checkmate::assert_subset(position, c("stack", "dodge", "fill", "identity"))
   checkmate::assert_subset(facet, names(data))
   checkmate::assert_character(palette, null.ok = TRUE)
+  checkmate::assert_number(ci, null.ok = TRUE)
   
-  if (hasArg("aggr")) {
-    data <- group_by_at(data, .vars = c(x, group, facet)) %>% aggr
+  # make sure plot_type is appropriate to inputs
+  if (!hasArg("y")) {
+    if (plot_type %in% c("point", "smooth", "col", "area", "line")) {
+      stop(paste0("Must specify y variable for plot_type '", plot_type, "'"))
+    }
   }
   
-  gg <- wrapr::let(
-    list(x_ = x,
-         y_ = y)
-    ,
-    {
-      ggplot(data, aes(x = x_, y = y_))
+  if (plot_type %in% c("density", "dotplot", "freqpoly", "histogram")) {
+    if (!(class(data[[x]]) %in% c("numeric", "integer", "Date"))) {
+      stop(paste0("x must be continuous (numeric, integer, or date) for plot_type '", plot_type, "'"))
     }
-  )
+  }
+  
+  if (plot_type == "bar" & class(data[[x]]) != "factor") {
+    warning(paste0(x, " will be coerced to a factor"))
+    data[[x]] <- as.factor(data[[x]])    
+  }
+  
+  # if group is specified, make sure position doesn't throw error
+  if (hasArg("group")) {
+    if (plot_type %in% c("col", "histogram")) {
+      if (position == "identity") {
+        message("Coercing position to 'stack'")
+        position <- "stack"
+      }
+    }
+  }
+  
+  # make sure confidence interval can be plotted
+  if (hasArg("ci")) {
+    ci_supported <- c("col", "line", "smooth", "point")
+    if (!(plot_type %in% ci_supported)) {
+      stop(paste0("Confidence interval only supported for plot_types: '", 
+                  paste(ci_supported, collapse = "', '"), "'"))
+    }
+    
+    if (plot_type == "col" & position != "dodge") {
+      if (hasArg("group")) {
+        stop("Must set position to 'dodge' to plot confidence interval on plot_type 'bar' with group")
+      }
+    }
+    
+  }
+  
+  if (hasArg("aggr")) {
+    data <- group_by_at(data, .vars = unique(c(x, group, facet))) %>% aggr
+  }
+  
+  if (hasArg("y")) {
+    gg <- wrapr::let(
+      list(x_ = x,
+           y_ = y)
+      ,
+      {
+        ggplot(data, aes(x = x_, y = y_))
+      }
+    )
+  } else {
+    gg <- wrapr::let(
+      list(x_ = x)
+      ,
+      {
+        ggplot(data, aes(x = x_))
+      }
+    )
+  }
 
   if (hasArg("facet")) {
     gg <- wrapr::let(
@@ -61,17 +127,28 @@ ezplot <- function(data, aggr = NULL, plot_type = "bar", x, y, group = NULL, gro
     )
   }
   
-  if (plot_type == "bar") {
+  if (plot_type == "col") {
+    # bar plot
+    if (class(data[[x]]) %in% c("numeric", "integer", "date")) {
+      warning(paste0(x, " will be coerced to a factor"))
+      data[[x]] <- as.factor(data[[x]])
+    }
+    
     if (hasArg("group")) {
       gg <- wrapr::let(
         list(group_ = group)
         ,
-        gg + geom_bar(aes(group = group_, fill = group_), position = group_method, stat = "identity")
+        gg + geom_col(aes(group = group_, fill = group_), position = position)
         )
     } else {
-      gg <- gg + geom_bar(stat = "identity")  
+      gg <- gg + geom_col()  
     }
   } else if (plot_type == "line") {
+    # line plot
+    if (class(data[[x]]) %in% c("character", "factor")) {
+      stop(paste0(x, " must be of type 'numeric', 'integer', or 'date' for line plot"))
+    }
+    
     if (hasArg("group")) {
       gg <- wrapr::let(
         list(group_ = group)
@@ -83,8 +160,41 @@ ezplot <- function(data, aggr = NULL, plot_type = "bar", x, y, group = NULL, gro
     }
     
   } else if (plot_type == "point") {
+    # point plot
+    
+    if (hasArg("group")) {
+      gg <- wrapr::let(
+        list(group_ = group)
+        ,
+        gg + geom_point(aes(group = group_, color = group_))
+      )
+    } else {
+      gg <- gg + geom_point()  
+    }
+    
     
   } else if (plot_type == "area") {
+    # area plot
+    if (class(data[[x]]) %in% c("character", "factor")) {
+      stop(paste0(x, " must be of type 'character' or 'factor' for area plot"))
+    }
+    
+    if (hasArg("group")) {
+      gg <- wrapr::let(
+        list(group_ = group)
+        ,
+        gg + geom_area(aes(group = group_, fill = group_))
+      )
+    } else {
+      gg <- gg + geom_area()  
+    }
+    
+  } else if (plot_type %in% c("density", "dotplot", "freqpoly", "histogram", "bar")) {
+    # density plot
+    params <- list(position = position)
+    if (hasArg("group")) params[["mapping"]] <- aes_string(group = group, fill = group)
+    params <- c(params, ...)
+    gg <- gg + do.call(paste0("geom_", plot_type), args = params)
     
   } else {
     stop("plot_type ", plot_type, " not supported!")
@@ -98,7 +208,30 @@ ezplot <- function(data, aggr = NULL, plot_type = "bar", x, y, group = NULL, gro
     }
   }
   
-  gg <- gg + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+  if (hasArg("ci")) {
+    zval <- -qnorm((1 - ci) / 2)
+    
+    if (hasArg("group")) {
+      gg <- gg + geom_errorbar(aes_string(ymin = paste0(y, " - ", zval, " * se_", y), 
+                                          ymax = paste0(y, " + ", zval, " * se_", y), 
+                                          group = group, color = group), 
+                               position = position)
+    } else {
+      gg <- gg + geom_errorbar(aes_string(ymin = paste0(y, " - ", zval, " * se_", y), 
+                                          ymax = paste0(y, " + ", zval, " * se_", y)))
+      
+    }
+  }
+  
+  if (hasArg("title") | hasArg("subtitle") | hasArg("caption")) {
+    labs_args <- list(title = title, subtitle = subtitle, caption = caption)
+    gg <- gg + do.call(labs, args = labs_args)
+  }
+
+  gg <- gg + theme(axis.text.x = element_text(angle = 90, hjust = 1),
+                   plot.title = element_text(hjust = 0.5),
+                   plot.subtitle = element_text(hjust = 0.5),
+                   plot.caption = element_text(hjust = 0))
   
   gg
 }
