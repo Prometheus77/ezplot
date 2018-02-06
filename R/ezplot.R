@@ -32,11 +32,22 @@
 #' }
 #' @param facet (Optional) Variable to facet by
 #' @param palette (Optional) Color palette to use for fill
+#' @param ci (Optional) Confidence interval to use for visualizing error
+#' @param error_type (Optional) Type of visualization to use for error. Default is \code{'errorbar'}
+#' \itemize{
+#'   \item \code{'crossbar'} Use \code{geom_crossbar()}
+#'   \item \code{'errorbar'} Use \code{geom_errorbar()}
+#'   \item \code{'linerange'} Use \code{geom_linerange()}
+#'   \item \code{'pointrange'} Use \code{geom_pointrange()}
+#' }
+#' @param error_args (Optinoal) List of additional arguments to pass to error
+#'   plotting function
 #' @param ... (Optional) Additional parameters to pass to the geom function
 #' 
 #' @export
 ezplot <- function(data, aggr = NULL, plot_type = "col", x, y = NULL, group = NULL, 
                    position = "identity", facet = NULL, palette = NULL, ci = NULL, 
+                   error_type = "errorbar", error_args = NULL,
                    title = NULL, subtitle = NULL, caption = NULL, ...) {
 
   checkmate::assert_subset(plot_type, c("col", "line", "point", "smooth", "area", "density", "dotplot",
@@ -63,7 +74,7 @@ ezplot <- function(data, aggr = NULL, plot_type = "col", x, y = NULL, group = NU
     }
   }
   
-  if (plot_type == "bar" & class(data[[x]]) != "factor") {
+  if ((plot_type %in% c("bar", "col")) & class(data[[x]]) != "factor") {
     warning(paste0(x, " will be coerced to a factor"))
     data[[x]] <- as.factor(data[[x]])    
   }
@@ -129,7 +140,7 @@ ezplot <- function(data, aggr = NULL, plot_type = "col", x, y = NULL, group = NU
   
   if (plot_type == "col") {
     # bar plot
-    if (class(data[[x]]) %in% c("numeric", "integer", "date")) {
+    if (class(data[[x]]) %in% c("numeric", "integer", "Date")) {
       warning(paste0(x, " will be coerced to a factor"))
       data[[x]] <- as.factor(data[[x]])
     }
@@ -212,15 +223,18 @@ ezplot <- function(data, aggr = NULL, plot_type = "col", x, y = NULL, group = NU
     zval <- -qnorm((1 - ci) / 2)
     
     if (hasArg("group")) {
-      gg <- gg + geom_errorbar(aes_string(ymin = paste0(y, " - ", zval, " * se_", y), 
-                                          ymax = paste0(y, " + ", zval, " * se_", y), 
-                                          group = group, color = group), 
-                               position = position)
+      error_arglist <- list(aes_string(ymin = paste0(y, " - ", zval, " * se_", y), 
+                                       ymax = paste0(y, " + ", zval, " * se_", y), 
+                                       group = group, color = group), 
+                            position = position)
     } else {
-      gg <- gg + geom_errorbar(aes_string(ymin = paste0(y, " - ", zval, " * se_", y), 
-                                          ymax = paste0(y, " + ", zval, " * se_", y)))
-      
+      error_arglist <- list(aes_string(ymin = paste0(y, " - ", zval, " * se_", y), 
+                                       ymax = paste0(y, " + ", zval, " * se_", y)))
     }
+    
+    error_arglist <- c(error_arglist, error_args)
+    gg <- gg + 
+      do.call(paste0("geom_", error_type), args = error_arglist)
   }
   
   if (hasArg("title") | hasArg("subtitle") | hasArg("caption")) {
