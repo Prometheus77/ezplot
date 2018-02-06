@@ -4,8 +4,10 @@
 \alias{ezplot}
 \title{Easy plotting of ggplot2 objects}
 \usage{
-ezplot(data, aggr = NULL, plot_type = "bar", x, y, group = NULL,
-  group_method = "stack", facet = NULL, palette = NULL)
+ezplot(data, aggr = NULL, plot_type = "col", x, y = NULL, group = NULL,
+  position = "identity", facet = NULL, palette = NULL, ci = NULL,
+  error_type = "errorbar", error_args = NULL, title = NULL,
+  subtitle = NULL, caption = NULL, ...)
 }
 \arguments{
 \item{data}{(\code{data.frame} | \code{tibble}) Data to be used in plot}
@@ -14,33 +16,52 @@ ezplot(data, aggr = NULL, plot_type = "bar", x, y, group = NULL,
 \code{dplyr::summarise}. Must take the form \code{function(x) summarise(x,
 ...)}}
 
-\item{plot_type}{\code{character(1)} Type of plot to create. Default is \code{'bar'}
+\item{plot_type}{\code{character(1)} Type of plot to create. Default is \code{'col'}
 \itemize{
-  \item \code{'bar'} Create bar plot using \code{geom_bar()}
+  \item \code{'col'} Create column plot using \code{geom_col()}
   \item \code{'line'} Create line plot using \code{geom_line()}
+  \item \code{'smooth'} Create smoothed line plot using \code{geom_smooth()}
   \item \code{'point'} Create point plot (scatterplot) using \code{geom_point()}
   \item \code{'area'} Create area plot using \code{geom_area()}
+  \item \code{'density'} Create density plot using \code{geom_density()}
+  \item \code{'dotplot'} Create dot plot using \code{geom_dotplot()}
+  \item \code{'freqpoly'} Create frequency polygon using \code{geom_freqpoly()}
+  \item \code{'histogram'} Create histogram using \code{geom_histogram()}
 }}
 
-\item{x}{Variable to use on X-axis. Will be coerced to a factor}
+\item{x}{Variable to use on X-axis}
 
 \item{y}{Variable to use on Y-axis}
 
 \item{group}{(Optional) Variable to group by}
 
-\item{group_method}{\code{character(1)} How to display grouping. Default is \code{'stack'}
+\item{position}{\code{character(1)} How to position grouping. Default is \code{'identity'}
 \itemize{
-  \item \code{'stack'} places groups on top of one another, i.e. stacked bar chart
+  \item \code{'stack'} stacks groups on top of one another, i.e. stacked bar chart
   \item \code{'dodge'} places groups side-by-side, i.e. clustered bar chart or butted bar chart
-  \item \code{'fill'} places groups on top of one another and normalizes to
+  \item \code{'fill'} stacks groups on top of one another and normalizes to
   the same height. Useful for comparing proportions
+  \item \code{'identity'} places groups in the same location
 }}
 
 \item{facet}{(Optional) Variable to facet by}
 
-\item{fill}{(Optional) Variable to fill by}
+\item{palette}{(Optional) Color palette to use for fill}
 
-\item{color}{(Optional) Variable to color by}
+\item{ci}{(Optional) Confidence interval to use for visualizing error}
+
+\item{error_type}{(Optional) Type of visualization to use for error. Default is \code{'errorbar'}
+\itemize{
+  \item \code{'crossbar'} Use \code{geom_crossbar()}
+  \item \code{'errorbar'} Use \code{geom_errorbar()}
+  \item \code{'linerange'} Use \code{geom_linerange()}
+  \item \code{'pointrange'} Use \code{geom_pointrange()}
+}}
+
+\item{error_args}{(Optinoal) List of additional arguments to pass to error
+plotting function}
+
+\item{...}{(Optional) Additional parameters to pass to the geom function}
 }
 \description{
 Creates a ggplot2 object using greatly simplified syntax
