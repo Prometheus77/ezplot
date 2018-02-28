@@ -133,7 +133,7 @@ ezplot <- function(data, aggr = NULL, plot_type = "col", x, y = NULL, group = NU
       list(facet_ = facet)
       ,
       {
-        gg + facet_grid(~ facet_)
+        gg + facet_wrap(~ facet_)
       }
     )
   }
