@@ -213,7 +213,7 @@ ezplot <- function(data, aggr = NULL, plot_type = "col", x, y = NULL, group = NU
   
   if (hasArg("palette")) {
     if (length(palette) == 1) {
-      gg <- gg + scale_fill_brewer(palette)
+      gg <- gg + scale_fill_brewer(palette = palette)
     } else {
       gg <- gg + scale_fill_manual(values = palette)
     }
