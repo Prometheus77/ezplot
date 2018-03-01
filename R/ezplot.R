@@ -232,6 +232,8 @@ ezplot <- function(data, aggr = NULL, plot_type = "col", x, y = NULL, group = NU
                                        ymax = paste0(y, " + ", zval, " * se_", y)))
     }
     
+    if (!hasArg("error_args")) error_args <- list(color = "black")
+    
     error_arglist <- c(error_arglist, error_args)
     gg <- gg + 
       do.call(paste0("geom_", error_type), args = error_arglist)
