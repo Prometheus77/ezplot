@@ -6,7 +6,8 @@
 \usage{
 ezplot(data, aggr = NULL, plot_type = "col", x, y = NULL, group = NULL,
   position = "identity", facet = NULL, palette = NULL, ci = NULL,
-  error_type = "errorbar", error_args = NULL, title = NULL,
+  error_type = "errorbar", error_args = NULL, text = FALSE,
+  text_round = function(x) signif(x, 3), text_args = NULL, title = NULL,
   subtitle = NULL, caption = NULL, ...)
 }
 \arguments{
@@ -60,6 +61,12 @@ ezplot(data, aggr = NULL, plot_type = "col", x, y = NULL, group = NULL,
 
 \item{error_args}{(Optinoal) List of additional arguments to pass to error
 plotting function}
+
+\item{text}{\code{logical(1)} Show values of y variable as text? Default is \code{'FALSE'}}
+
+\item{text_round}{\code{function} Function to use to round text. Default is \code{function(x) signif(x, 3)}}
+
+\item{text_args}{(Optional) List of additional arguments to pass to geom_text}
 
 \item{...}{(Optional) Additional parameters to pass to the geom function}
 }

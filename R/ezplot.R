@@ -42,12 +42,16 @@
 #' }
 #' @param error_args (Optinoal) List of additional arguments to pass to error
 #'   plotting function
+#' @param text \code{logical(1)} Show values of y variable as text? Default is \code{'FALSE'}
+#' @param text_round \code{function} Function to use to round text. Default is \code{function(x) signif(x, 3)}
+#' @param text_args (Optional) List of additional arguments to pass to geom_text
 #' @param ... (Optional) Additional parameters to pass to the geom function
 #' 
 #' @export
 ezplot <- function(data, aggr = NULL, plot_type = "col", x, y = NULL, group = NULL, 
                    position = "identity", facet = NULL, palette = NULL, ci = NULL, 
-                   error_type = "errorbar", error_args = NULL,
+                   error_type = "errorbar", error_args = NULL, text = FALSE, 
+                   text_round = function(x) signif(x, 3), text_args = NULL,
                    title = NULL, subtitle = NULL, caption = NULL, ...) {
 
   checkmate::assert_subset(plot_type, c("col", "line", "point", "smooth", "area", "density", "dotplot",
@@ -60,6 +64,7 @@ ezplot <- function(data, aggr = NULL, plot_type = "col", x, y = NULL, group = NU
   checkmate::assert_subset(facet, names(data))
   checkmate::assert_character(palette, null.ok = TRUE)
   checkmate::assert_number(ci, null.ok = TRUE)
+  checkmate::assert_logical(text, any.missing = FALSE, len = 1)
   
   # make sure plot_type is appropriate to inputs
   if (!hasArg("y")) {
@@ -107,6 +112,11 @@ ezplot <- function(data, aggr = NULL, plot_type = "col", x, y = NULL, group = NU
   
   if (hasArg("aggr")) {
     data <- group_by_at(data, .vars = unique(c(x, group, facet))) %>% aggr
+  }
+  
+  # handle rounding of y in case of text = TRUE
+  if (text == TRUE) {
+    data <- wrapr::let(c(y_ = y), {data <- data %>% mutate(y_rounded = do.call(text_round, list(y_)))})
   }
   
   if (hasArg("y")) {
@@ -183,7 +193,6 @@ ezplot <- function(data, aggr = NULL, plot_type = "col", x, y = NULL, group = NU
       gg <- gg + geom_point()  
     }
     
-    
   } else if (plot_type == "area") {
     # area plot
     if (class(data[[x]]) %in% c("character", "factor")) {
@@ -237,6 +246,12 @@ ezplot <- function(data, aggr = NULL, plot_type = "col", x, y = NULL, group = NU
     error_arglist <- c(error_arglist, error_args)
     gg <- gg + 
       do.call(paste0("geom_", error_type), args = error_arglist)
+  }
+  
+  if (text == TRUE) {
+    text_arglist <- c(list(aes_string(label = "y_rounded")), text_args)
+    gg <- gg +
+      do.call("geom_text", args = text_arglist)
   }
   
   if (hasArg("title") | hasArg("subtitle") | hasArg("caption")) {
