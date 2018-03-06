@@ -249,7 +249,7 @@ ezplot <- function(data, aggr = NULL, plot_type = "col", x, y = NULL, group = NU
   }
   
   if (text == TRUE) {
-    text_arglist <- c(list(aes_string(label = "y_rounded")), text_args)
+    text_arglist <- c(list(aes_string(label = "y_rounded")), list(position = position), text_args)
     gg <- gg +
       do.call("geom_text", args = text_arglist)
   }
