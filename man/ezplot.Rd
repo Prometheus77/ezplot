@@ -5,10 +5,10 @@
 \title{Easy plotting of ggplot2 objects}
 \usage{
 ezplot(data, aggr = NULL, plot_type = "col", x, y = NULL, group = NULL,
-  position = "identity", facet = NULL, palette = NULL, ci = NULL,
-  error_type = "errorbar", error_args = NULL, text = FALSE,
-  text_round = function(x) signif(x, 3), text_args = NULL, title = NULL,
-  subtitle = NULL, caption = NULL, ...)
+  position = "identity", facet = NULL, facet_x = NULL, facet_y = NULL,
+  palette = NULL, ci = NULL, error_type = "errorbar", error_args = NULL,
+  text = FALSE, text_round = function(x) signif(x, 3), text_args = NULL,
+  title = NULL, subtitle = NULL, caption = NULL, ...)
 }
 \arguments{
 \item{data}{(\code{data.frame} | \code{tibble}) Data to be used in plot}
@@ -45,13 +45,23 @@ ezplot(data, aggr = NULL, plot_type = "col", x, y = NULL, group = NULL,
   \item \code{'identity'} places groups in the same location
 }}
 
-\item{facet}{(Optional) Variable to facet by}
+\item{facet}{(Optional) Variable to facet by using \code{facet_wrap()}. Will
+be ignored if combined with \code{facet_x} or \code{facet_y}}
+
+\item{facet_x}{(Optional) Variable to facet by using \code{facet_grid(. ~
+x)}. When combined with \code{facet_y}, will facet using \code{facet_grid(y
+~ x)}}
+
+\item{facet_y}{(Optional) Variable to facet by using \code{facet_grid(y ~
+.)}. When combined with \code{facet_x}, will facet using \code{facet_grid(y
+~ x)}}
 
 \item{palette}{(Optional) Color palette to use for fill}
 
 \item{ci}{(Optional) Confidence interval to use for visualizing error}
 
-\item{error_type}{(Optional) Type of visualization to use for error. Default is \code{'errorbar'}
+\item{error_type}{(Optional) Type of visualization to use for error. Default
+  is \code{'errorbar'}
 \itemize{
   \item \code{'crossbar'} Use \code{geom_crossbar()}
   \item \code{'errorbar'} Use \code{geom_errorbar()}
@@ -62,9 +72,11 @@ ezplot(data, aggr = NULL, plot_type = "col", x, y = NULL, group = NULL,
 \item{error_args}{(Optinoal) List of additional arguments to pass to error
 plotting function}
 
-\item{text}{\code{logical(1)} Show values of y variable as text? Default is \code{'FALSE'}}
+\item{text}{\code{logical(1)} Show values of y variable as text? Default is
+\code{'FALSE'}}
 
-\item{text_round}{\code{function} Function to use to round text. Default is \code{function(x) signif(x, 3)}}
+\item{text_round}{\code{function} Function to use to round text. Default is
+\code{function(x) signif(x, 3)}}
 
 \item{text_args}{(Optional) List of additional arguments to pass to geom_text}
 

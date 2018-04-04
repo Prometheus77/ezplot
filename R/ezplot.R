@@ -30,10 +30,18 @@
 #'   the same height. Useful for comparing proportions
 #'   \item \code{'identity'} places groups in the same location
 #' }
-#' @param facet (Optional) Variable to facet by
+#' @param facet (Optional) Variable to facet by using \code{facet_wrap()}. Will
+#'   be ignored if combined with \code{facet_x} or \code{facet_y}
+#' @param facet_x (Optional) Variable to facet by using \code{facet_grid(. ~
+#'   x)}. When combined with \code{facet_y}, will facet using \code{facet_grid(y
+#'   ~ x)}
+#' @param facet_y (Optional) Variable to facet by using \code{facet_grid(y ~
+#'   .)}. When combined with \code{facet_x}, will facet using \code{facet_grid(y
+#'   ~ x)}
 #' @param palette (Optional) Color palette to use for fill
 #' @param ci (Optional) Confidence interval to use for visualizing error
-#' @param error_type (Optional) Type of visualization to use for error. Default is \code{'errorbar'}
+#' @param error_type (Optional) Type of visualization to use for error. Default
+#'   is \code{'errorbar'}
 #' \itemize{
 #'   \item \code{'crossbar'} Use \code{geom_crossbar()}
 #'   \item \code{'errorbar'} Use \code{geom_errorbar()}
@@ -42,14 +50,17 @@
 #' }
 #' @param error_args (Optinoal) List of additional arguments to pass to error
 #'   plotting function
-#' @param text \code{logical(1)} Show values of y variable as text? Default is \code{'FALSE'}
-#' @param text_round \code{function} Function to use to round text. Default is \code{function(x) signif(x, 3)}
+#' @param text \code{logical(1)} Show values of y variable as text? Default is
+#'   \code{'FALSE'}
+#' @param text_round \code{function} Function to use to round text. Default is
+#'   \code{function(x) signif(x, 3)}
 #' @param text_args (Optional) List of additional arguments to pass to geom_text
 #' @param ... (Optional) Additional parameters to pass to the geom function
 #' 
 #' @export
 ezplot <- function(data, aggr = NULL, plot_type = "col", x, y = NULL, group = NULL, 
-                   position = "identity", facet = NULL, palette = NULL, ci = NULL, 
+                   position = "identity", facet = NULL, facet_x = NULL, facet_y = NULL,
+                   palette = NULL, ci = NULL, 
                    error_type = "errorbar", error_args = NULL, text = FALSE, 
                    text_round = function(x) signif(x, 3), text_args = NULL,
                    title = NULL, subtitle = NULL, caption = NULL, ...) {
@@ -138,12 +149,41 @@ ezplot <- function(data, aggr = NULL, plot_type = "col", x, y = NULL, group = NU
     )
   }
 
-  if (hasArg("facet")) {
+  if (hasArg("facet") & !(hasArg("facet_x") | hasArg("facet_y"))) {
     gg <- wrapr::let(
       list(facet_ = facet)
       ,
       {
         gg + facet_wrap(~ facet_)
+      }
+    )
+  }
+  
+  if (hasArg("facet_x")) {
+    if (hasArg("facet_y")) {
+      gg <- wrapr::let(
+        list(facet_x_ = facet_x,
+             facet_y_ = facet_y)
+        ,
+        {
+          gg + facet_grid(facet_y_ ~ facet_x_)
+        }
+      )
+    } else {
+      gg <- wrapr::let(
+        list(facet_x_ = facet_x)
+        ,
+        {
+          gg + facet_grid(. ~ facet_x_)
+        }
+      )
+    }
+  } else if (hasArg("facet_y")) {
+    gg <- wrapr::let(
+      list(facet_y_ = facet_y)
+      ,
+      {
+        gg + facet_grid(facet_y_ ~ .)
       }
     )
   }
@@ -249,7 +289,12 @@ ezplot <- function(data, aggr = NULL, plot_type = "col", x, y = NULL, group = NU
   }
   
   if (text == TRUE) {
-    text_arglist <- c(list(aes_string(label = "y_rounded")), list(position = position), text_args)
+    if (position == "dodge") {
+      position_arg <- list(position = position_dodge(width = 1))
+    } else {
+      position_arg <- list(position = position)
+    }
+    text_arglist <- c(list(aes_string(label = "y_rounded")), position_arg, text_args)
     gg <- gg +
       do.call("geom_text", args = text_arglist)
   }
