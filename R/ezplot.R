@@ -18,6 +18,7 @@
 #'   \item \code{'dotplot'} Create dot plot using \code{geom_dotplot()}
 #'   \item \code{'freqpoly'} Create frequency polygon using \code{geom_freqpoly()}
 #'   \item \code{'histogram'} Create histogram using \code{geom_histogram()}
+#'   \item \code{'rect'} Create rectangle plot using \code{geom_rect()}
 #' }
 #' @param x Variable to use on X-axis
 #' @param y Variable to use on Y-axis
@@ -66,7 +67,7 @@ ezplot <- function(data, aggr = NULL, plot_type = "col", x, y = NULL, group = NU
                    title = NULL, subtitle = NULL, caption = NULL, ...) {
 
   checkmate::assert_subset(plot_type, c("col", "line", "point", "smooth", "area", "density", "dotplot",
-                                        "freqpoly", "histogram", "bar"))
+                                        "freqpoly", "histogram", "bar", "rect"))
   checkmate::assert_function(aggr, null.ok = TRUE)
   checkmate::assert_subset(x, names(data), empty.ok = FALSE)
   # can't check y without knowing aggregation values
@@ -76,6 +77,8 @@ ezplot <- function(data, aggr = NULL, plot_type = "col", x, y = NULL, group = NU
   checkmate::assert_character(palette, null.ok = TRUE)
   checkmate::assert_number(ci, null.ok = TRUE)
   checkmate::assert_logical(text, any.missing = FALSE, len = 1)
+  
+  dots <- list(...)
   
   # make sure plot_type is appropriate to inputs
   if (!hasArg("y")) {
@@ -123,6 +126,12 @@ ezplot <- function(data, aggr = NULL, plot_type = "col", x, y = NULL, group = NU
   
   if (hasArg("aggr")) {
     data <- group_by_at(data, .vars = unique(c(x, group, facet))) %>% aggr
+  }
+  
+  if (plot_type == "rect") {
+    if (!(hasArg("xmin") & hasArg("xmax") & hasArg("ymin") & hasArg("ymax"))) {
+      stop("Must contain 'xmin', 'xmax', 'ymin', 'ymax' arguments to use plot_type 'rect'")
+    }
   }
   
   # handle rounding of y in case of text = TRUE
@@ -249,6 +258,38 @@ ezplot <- function(data, aggr = NULL, plot_type = "col", x, y = NULL, group = NU
       gg <- gg + geom_area()  
     }
     
+  } else if (plot_type == "rect") {
+    # rectangle plot
+    if (!(class(data[[x]]) %in% c("character", "factor"))) {
+      stop(paste0(x, " must be of type 'character' or 'factor' for rectangle plot'"))
+    }
+    
+    if (hasArg("group")) {
+      
+      gg <- wrapr::let(
+        list(group_ = group,
+             xmin_ = dots$xmin,
+             xmax_ = dots$xmax,
+             ymin_ = dots$ymin,
+             ymax_ = dots$ymax)
+        ,
+        {
+          gg + geom_rect(aes(group = group_, fill = group_, xmin = xmin_, xmax = xmax_, 
+                             ymin = ymin_, ymax = ymax_))
+        })
+    } else {
+      gg <- wrapr::let(
+        list(xmin_ = dots$xmin,
+             xmax_ = dots$xmax,
+             ymin_ = dots$ymin,
+             ymax_ = dots$ymax)
+        ,
+        {
+          gg + geom_rect(aes(xmin = xmin_, xmax = xmax_, 
+                             ymin = ymin_, ymax = ymax_))
+        })
+    }
+    
   } else if (plot_type %in% c("density", "dotplot", "freqpoly", "histogram", "bar")) {
     # density plot
     params <- list(position = position)
@@ -310,4 +351,172 @@ ezplot <- function(data, aggr = NULL, plot_type = "col", x, y = NULL, group = NU
                    plot.caption = element_text(hjust = 0))
   
   gg
+}
+
+#'@export
+ezline <- function(data, aggr = NULL, x, y = NULL, group = NULL, 
+                   position = "identity", facet = NULL, facet_x = NULL, facet_y = NULL,
+                   palette = NULL, ci = NULL, 
+                   error_type = "errorbar", error_args = NULL, text = FALSE, 
+                   text_round = function(x) signif(x, 3), text_args = NULL,
+                   title = NULL, subtitle = NULL, caption = NULL, ...) {
+  ezplot(data = data, aggr = aggr, plot_type = "line", x = x, y = y, group = group,
+         position = position, facet = facet, facet_x = facet_x, facet_y = facet_y,
+         palette = palette, ci = ci, error_type = error_type, error_args = error_args,
+         text = text, text_round = text_round, text_args = text_args, title = title,
+         subtitle = subtitle, caption = caption, ...)
+}
+
+#'@export
+ezcol <- function(data, aggr = NULL, x, y = NULL, group = NULL, 
+                   position = "stack", facet = NULL, facet_x = NULL, facet_y = NULL,
+                   palette = NULL, ci = NULL, 
+                   error_type = "errorbar", error_args = NULL, text = FALSE, 
+                   text_round = function(x) signif(x, 3), text_args = NULL,
+                   title = NULL, subtitle = NULL, caption = NULL, ...) {
+  ezplot(data = data, aggr = aggr, plot_type = "col", x = x, y = y, group = group,
+         position = position, facet = facet, facet_x = facet_x, facet_y = facet_y,
+         palette = palette, ci = ci, error_type = error_type, error_args = error_args,
+         text = text, text_round = text_round, text_args = text_args, title = title,
+         subtitle = subtitle, caption = caption, ...)
+}
+
+#'@export
+ezcol_stack <- function(data, aggr = NULL, x, y = NULL, group = NULL, 
+                  facet = NULL, facet_x = NULL, facet_y = NULL,
+                  palette = NULL, ci = NULL, 
+                  error_type = "errorbar", error_args = NULL, text = FALSE, 
+                  text_round = function(x) signif(x, 3), text_args = NULL,
+                  title = NULL, subtitle = NULL, caption = NULL, ...) {
+  ezplot(data = data, aggr = aggr, plot_type = "col", x = x, y = y, group = group,
+         position = "stack", facet = facet, facet_x = facet_x, facet_y = facet_y,
+         palette = palette, ci = ci, error_type = error_type, error_args = error_args,
+         text = text, text_round = text_round, text_args = text_args, title = title,
+         subtitle = subtitle, caption = caption, ...)
+}
+
+#'@export
+ezcol_dodge <- function(data, aggr = NULL, x, y = NULL, group = NULL, 
+                        facet = NULL, facet_x = NULL, facet_y = NULL,
+                        palette = NULL, ci = NULL, 
+                        error_type = "errorbar", error_args = NULL, text = FALSE, 
+                        text_round = function(x) signif(x, 3), text_args = NULL,
+                        title = NULL, subtitle = NULL, caption = NULL, ...) {
+  ezplot(data = data, aggr = aggr, plot_type = "col", x = x, y = y, group = group,
+         position = "dodge", facet = facet, facet_x = facet_x, facet_y = facet_y,
+         palette = palette, ci = ci, error_type = error_type, error_args = error_args,
+         text = text, text_round = text_round, text_args = text_args, title = title,
+         subtitle = subtitle, caption = caption, ...)
+}
+
+#'@export
+ezcol_fill <- function(data, aggr = NULL, x, y = NULL, group = NULL, 
+                        facet = NULL, facet_x = NULL, facet_y = NULL,
+                        palette = NULL, ci = NULL, 
+                        error_type = "errorbar", error_args = NULL, text = FALSE, 
+                        text_round = function(x) signif(x, 3), text_args = NULL,
+                        title = NULL, subtitle = NULL, caption = NULL, ...) {
+  ezplot(data = data, aggr = aggr, plot_type = "col", x = x, y = y, group = group,
+         position = "fill", facet = facet, facet_x = facet_x, facet_y = facet_y,
+         palette = palette, ci = ci, error_type = error_type, error_args = error_args,
+         text = text, text_round = text_round, text_args = text_args, title = title,
+         subtitle = subtitle, caption = caption, ...)
+}
+
+#'@export
+ezsmooth <- function(data, aggr = NULL, x, y = NULL, group = NULL, 
+                     position = "identity", facet = NULL, facet_x = NULL, facet_y = NULL,
+                     palette = NULL, ci = NULL, 
+                     error_type = "errorbar", error_args = NULL, text = FALSE, 
+                     text_round = function(x) signif(x, 3), text_args = NULL,
+                     title = NULL, subtitle = NULL, caption = NULL, ...) {
+  ezplot(data = data, aggr = aggr, plot_type = "smooth", x = x, y = y, group = group,
+         position = position, facet = facet, facet_x = facet_x, facet_y = facet_y,
+         palette = palette, ci = ci, error_type = error_type, error_args = error_args,
+         text = text, text_round = text_round, text_args = text_args, title = title,
+         subtitle = subtitle, caption = caption, ...)
+}
+
+#'@export
+ezpoint <- function(data, aggr = NULL, x, y = NULL, group = NULL, 
+                     position = "identity", facet = NULL, facet_x = NULL, facet_y = NULL,
+                     palette = NULL, ci = NULL, 
+                     error_type = "errorbar", error_args = NULL, text = FALSE, 
+                     text_round = function(x) signif(x, 3), text_args = NULL,
+                     title = NULL, subtitle = NULL, caption = NULL, ...) {
+  ezplot(data = data, aggr = aggr, plot_type = "point", x = x, y = y, group = group,
+         position = position, facet = facet, facet_x = facet_x, facet_y = facet_y,
+         palette = palette, ci = ci, error_type = error_type, error_args = error_args,
+         text = text, text_round = text_round, text_args = text_args, title = title,
+         subtitle = subtitle, caption = caption, ...)
+}
+
+#'@export
+ezarea <- function(data, aggr = NULL, x, y = NULL, group = NULL, 
+                    position = "identity", facet = NULL, facet_x = NULL, facet_y = NULL,
+                    palette = NULL, ci = NULL, 
+                    error_type = "errorbar", error_args = NULL, text = FALSE, 
+                    text_round = function(x) signif(x, 3), text_args = NULL,
+                    title = NULL, subtitle = NULL, caption = NULL, ...) {
+  ezplot(data = data, aggr = aggr, plot_type = "area", x = x, y = y, group = group,
+         position = position, facet = facet, facet_x = facet_x, facet_y = facet_y,
+         palette = palette, ci = ci, error_type = error_type, error_args = error_args,
+         text = text, text_round = text_round, text_args = text_args, title = title,
+         subtitle = subtitle, caption = caption, ...)
+}
+
+#'@export
+ezdotplot <- function(data, aggr = NULL, x, y = NULL, group = NULL, 
+                   position = "identity", facet = NULL, facet_x = NULL, facet_y = NULL,
+                   palette = NULL, ci = NULL, 
+                   error_type = "errorbar", error_args = NULL, text = FALSE, 
+                   text_round = function(x) signif(x, 3), text_args = NULL,
+                   title = NULL, subtitle = NULL, caption = NULL, ...) {
+  ezplot(data = data, aggr = aggr, plot_type = "dotplot", x = x, y = y, group = group,
+         position = position, facet = facet, facet_x = facet_x, facet_y = facet_y,
+         palette = palette, ci = ci, error_type = error_type, error_args = error_args,
+         text = text, text_round = text_round, text_args = text_args, title = title,
+         subtitle = subtitle, caption = caption, ...)
+}
+
+#'@export
+ezdensity <- function(data, aggr = NULL, x, y = NULL, group = NULL, 
+                      position = "identity", facet = NULL, facet_x = NULL, facet_y = NULL,
+                      palette = NULL, ci = NULL, 
+                      error_type = "errorbar", error_args = NULL, text = FALSE, 
+                      text_round = function(x) signif(x, 3), text_args = NULL,
+                      title = NULL, subtitle = NULL, caption = NULL, ...) {
+  ezplot(data = data, aggr = aggr, plot_type = "density", x = x, y = y, group = group,
+         position = position, facet = facet, facet_x = facet_x, facet_y = facet_y,
+         palette = palette, ci = ci, error_type = error_type, error_args = error_args,
+         text = text, text_round = text_round, text_args = text_args, title = title,
+         subtitle = subtitle, caption = caption, ...)
+}
+
+#'@export
+ezfreq <- function(data, aggr = NULL, x, y = NULL, group = NULL, 
+                      position = "identity", facet = NULL, facet_x = NULL, facet_y = NULL,
+                      palette = NULL, ci = NULL, 
+                      error_type = "errorbar", error_args = NULL, text = FALSE, 
+                      text_round = function(x) signif(x, 3), text_args = NULL,
+                      title = NULL, subtitle = NULL, caption = NULL, ...) {
+  ezplot(data = data, aggr = aggr, plot_type = "freqpoly", x = x, y = y, group = group,
+         position = position, facet = facet, facet_x = facet_x, facet_y = facet_y,
+         palette = palette, ci = ci, error_type = error_type, error_args = error_args,
+         text = text, text_round = text_round, text_args = text_args, title = title,
+         subtitle = subtitle, caption = caption, ...)
+}
+
+#'@export
+ezhist <- function(data, aggr = NULL, x, y = NULL, group = NULL, 
+                       position = "identity", facet = NULL, facet_x = NULL, facet_y = NULL,
+                       palette = NULL, ci = NULL, 
+                       error_type = "errorbar", error_args = NULL, text = FALSE, 
+                       text_round = function(x) signif(x, 3), text_args = NULL,
+                       title = NULL, subtitle = NULL, caption = NULL, ...) {
+  ezplot(data = data, aggr = aggr, plot_type = "histogram", x = x, y = y, group = group,
+         position = position, facet = facet, facet_x = facet_x, facet_y = facet_y,
+         palette = palette, ci = ci, error_type = error_type, error_args = error_args,
+         text = text, text_round = text_round, text_args = text_args, title = title,
+         subtitle = subtitle, caption = caption, ...)
 }

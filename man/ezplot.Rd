@@ -28,6 +28,7 @@ ezplot(data, aggr = NULL, plot_type = "col", x, y = NULL, group = NULL,
   \item \code{'dotplot'} Create dot plot using \code{geom_dotplot()}
   \item \code{'freqpoly'} Create frequency polygon using \code{geom_freqpoly()}
   \item \code{'histogram'} Create histogram using \code{geom_histogram()}
+  \item \code{'rect'} Create rectangle plot using \code{geom_rect()}
 }}
 
 \item{x}{Variable to use on X-axis}

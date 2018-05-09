@@ -1,5 +1,6 @@
 context("ezplot basics")
 
+library(magrittr)
 td <- data.frame(f1 = sample(letters[1:5], 100, replace = TRUE),
                  f2 = sample(letters[6:10], 100, replace = TRUE),
                  c1 = rnorm(100) + 10,
@@ -71,3 +72,19 @@ test_that("ez_plot can make grouped line",
             gg$plot_env <- NULL
             expect_equal(ez, gg)
           })
+
+test_that("ez_plot can make rectangles",
+  {
+    td_rect <- td %>%
+      group_by(f1) %>%
+      summarize(fmin = min(c1),
+                fmax = max(c1)) %>%
+      mutate(row_index = row_number(),
+             xmin = row_index - .45,
+             xmax = row_index + .45)
+    
+    td_rect_plot <- td_rect %>%
+      ggplot + geom_rect(aes(x = f1, xmin = xmin, xmax = xmax, ymin = fmin, ymax = fmax))
+    
+    ezplot(data = td_rect, plot_type = "rect", x = "f1", xmin = "xmin", xmax = "xmax", ymin = "fmin", ymax = "fmax")
+  })
