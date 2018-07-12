@@ -4,13 +4,15 @@
 \alias{plot_waterfall}
 \title{Waterfall plot}
 \usage{
-plot_waterfall(data, aggr = NULL, x, y, group = NULL, group_sign = FALSE,
-  direction = "up", touch = NULL, palette = NULL)
+plot_waterfall(data, x, y, group = NULL, group_sign = FALSE,
+  anchor = NULL, anchor.first = TRUE, anchor.last = TRUE,
+  palette = c("green", "red", "blue4"), title = NULL, subtitle = NULL,
+  width = 0.8, xlab = NULL, ylab = NULL, x.rotate = 0,
+  linetype = "dashed", linecolor = "black", border = "black",
+  legend.position = "none")
 }
 \arguments{
 \item{data}{(`data.frame` | `tibble`) Data to be used in plot}
-
-\item{aggr}{(`function`) (Optional) function created using}
 
 \item{x}{Variable to use on X-axis. Must be of type 'character' or 'factor'.}
 
@@ -20,15 +22,46 @@ plot_waterfall(data, aggr = NULL, x, y, group = NULL, group_sign = FALSE,
 
 \item{group_sign}{(`logical`) (Optional) Group by sign (positive or negative)
 for each segment? A new column will be created consisting of `pos`, `neg`,
-`touch` for each segment (factor levels will be set in order listed).
+`anchor` for each segment (factor levels will be set in order listed).
 If `TRUE`, will override `group`. Default is `FALSE`.}
 
-\item{direction}{= Should the waterfall build 'up' or 'down'? Default is 'up'.}
+\item{anchor}{(Optional) Vector of x values or numerical indices which will touch the X-axis.}
 
-\item{touch}{(Optional) Vector of x-variables which will touch the X-axis. Default is
-the first and last variable in the sequence.}
+\item{anchor.first}{(Optional) Anchor the first segment of the waterfall? Default is TRUE.}
 
-\item{palette}{(Optional) Color palette to use for fill}
+\item{anchor.last}{(Optional) Anchor the last segment of the waterfall? Default is TRUE.}
+
+\item{palette}{(Optional) Color palette to use for fill. Default is c('blue4', 'red', 'green').}
+
+\item{title}{(Optional) Plot title}
+
+\item{subtitle}{(Optional) Plot subtitle}
+
+\item{width}{(Optional) Width of segments, expressed as a number between 0
+and 1, with 0 meaning segments will not be shown, and 1 meaning segments
+will be touching each other. Default is 0.8.}
+
+\item{xlab}{(Optional) Axis label for x-axis}
+
+\item{ylab}{(Optional) Axis label for y-axis}
+
+\item{x.rotate}{(Optional) Degrees to rotate x-axis labels. Default is 0.
+Will be passed to \code{ggplot2::theme(axis.text.x = element_text(angle =
+))}.}
+
+\item{linetype}{(Optional) Type of line to use to connect waterfall segments.
+Default is 'dashed'. Will be passed to \code{ggplot2::geom_step(linetype =
+)}.}
+
+\item{linecolor}{(Optional) Color of line used to connect waterfall segments.
+Default is 'black'. Will be passed to \code{ggplot2::geom_step(color = )}.}
+
+\item{border}{(Optional) Color of border to use for waterfall segments.
+Default is 'black'. Will be passed to \code{ggplot2::geom_rect(color = )}.}
+
+\item{legend.position}{(Optional) Where to show the legend for the fill
+colors. Default is 'none'. Will be passed to
+\code{ggplot2::theme(legend.position = )}.}
 }
 \description{
 Produce a waterfall plot using the geom_rect() function. A waterfall plot
